@@ -23,7 +23,7 @@ sub Feature_to_table($$$){
 	return () if $n3>3;
 	
 	if($n2<2){
-		($n1,$n2,$n3)=(3-$n1,$n2,3-$n3);
+		($n1,$n2,$n3)=(3-$n3,$n2,3-$n1);
 	}
 	else{
 		($n1,$n2,$n3)=($n1,3-$n2,$n3);
