@@ -1,0 +1,90 @@
+Shallow part
+
+preparation files:
+
+ICGC tsv file and genome fasta file are downloaded from internet;
+Users could provide their own de-duplicated mutation file and then start from EMu_prepare part.
+Mutation file format: a txt file with each line indicating one mutation, and 5 columns indicating the chromosome, position on the chromosome, original base and mutated base of that mutation.
+Or users may also provide their own mutation count file and genome background file. Then, they don't need to provide the genome fasta file.
+
+
+reduce.pl
+	convert ICGC tsv file to mutation file
+	input: ICGC tsv file
+	output: mutation file
+
+sort.r
+	sort mutation file
+	input: mutation file
+	output: sorted mutation file
+
+dedup.pl
+	remove duplicated entries in the mutation file
+	input: sorted mutation file
+	output: de-duplicated mutation file
+
+
+	
+EMu_prepare.pl: 
+	convert from mutation input file to input used by our algorithm with 3bp signatures(same as EMu model)
+	input:genome fasta file, de-duplicated mutation file 
+	output: sample info file, 3bp mutation count file, 3bp genome background file
+EMu_prepare5.pl:
+	convert from mutation input file to input used by our algorithm with 5bp signatures(same as EMu model)
+	input:genome fasta file, de-duplicated mutation file 
+	output: sample info file, 5bp mutation count file, 5bp genome background file
+
+***only used when considering open chromatin region***
+***not so important***	
+bed_pre.pl
+	extract useful infomation from downloaded open chromatin region of the genome
+	input: Ubiquitous.bed
+	output:Ubiquitous_s.bed
+	
+sort_bed.r
+	sort open chromatin region
+	input:Ubiquitous_s.bed
+	output:sorted open chromatin region
+	
+EMu_prepare_open.pl
+	convert from mutation input file to input used by our algorithm with 3bp signatures(same as EMu model), but only consider open chromatin region on genome
+	input:genome fasta file,de-duplicated mutation file, sorted open chromatin region
+	output: sample info file, 3bp mutation count file, 3bp genome background file
+
+	
+Algorithm part:
+
+Only mutation count and background file are needed for this part.
+Sample info file is used by the users to refer each line in the file output to the original sample name. (Thus, it is a hash table.)
+Feature file: the mutation signature defined according to our model.
+Mutation matrix file: the probability of each base being mutated to another base
+Mutation rate file: the mutation rate/activity of each mutation signature in each sample.
+Mutation signature file: the most popular 96-channel view of the muation signature calculated by our algorithm.
+
+ReLU_sample.py ;exponential_data.py 
+	Basic verison of the algorithm using ReLu and exp function as transfer layer respectively.
+	The number of bases (3,5bp) and number of signatures are parameters set by the user.
+	Input: mutation count file, genome backgound file
+	output:  Feature file, Mtation matirx file, Mutation rate file, Mutation signature file;
+
+	
+ ***not necessart for packaging***
+ReLU_sm.py ;exp_sm.py
+	Used for testing the performance of our algorithm.
+	1.We choose 10 samples our of the whole sample set;
+	2.Each time, we randomly choose another 10 sample set from the whole sample set;
+	3.Run algorithm on 20 samples;
+	4.Repeat 2,3 for multiple times;
+	5.Compare resultes from each iteration to see how our algorithm works when the sample size is limited (20 samples);
+	Input: mutation count file, genome backgound file
+	output:  Feature file, Mtation matirx file, Mutation rate file, Mutation signature file;
+	
+exp_tran.py ; relu_tran.py
+	Run the algorithm on 20 samples first to learn the signatures;
+	and apply these signatures to other samples to calculate the mutation rate for these signatures in other samples.
+	This is for testing if our model works with transfer learning.
+	Input: mutation count file, genome backgound file
+	output:  Feature file, Mtation matirx file, Mutation rate file, Mutation signature file;
+	
+Analysis.R
+	R file for computing how good the results are.
