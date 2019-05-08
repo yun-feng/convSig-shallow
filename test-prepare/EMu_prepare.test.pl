@@ -1,8 +1,8 @@
 use warnings;
 use strict;
 
-my $fasta_file="/well/htseq/Genomes/BWA/GRCh37";
-my $mut_file="/data/ted/COAD/esophagael-de.txt";
+my $fasta_file="/data/ted/COAD/test-prepare/GRCh37_head";
+my $mut_file="/data/ted/COAD/test-prepare/mut_head";
 
 sub Base_to_number($){
 	$_=shift;
@@ -131,7 +131,7 @@ while(<FASTA>){
 	
 }
 
-my $dir="/data/ted/COAD/";
+my $dir="/data/ted/COAD/test-prepare/";
 open OUT, ">${dir}eso.mut.txt" or die "Can't open output file ${dir}COAD.mut.txt";
 for (keys %mut_hash){
 	print OUT (join "\t", @{$mut_hash{$_}});
