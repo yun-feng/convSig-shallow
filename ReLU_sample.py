@@ -32,6 +32,7 @@ test_error=[];
 
 for K in range(5,6):
 	
+	#random initialization
 	#Hidden variable for EM algorithm
 	Z=np.random.random((S,N,3,K));
 	Z/=Z.sum(3)[:,:,:,np.newaxis];
@@ -40,8 +41,10 @@ for K in range(5,6):
 	P=np.random.random((S,K))
 	
 	#Feature matrix
+	#F is orginally in a matrix format, and now it is being put into a vector format
 	Feature=np.random.random((Num_base*4-2,K));
 	
+	#update conv according to F, and store the value conv=h(T*F)
 	def conv_update():
 		conv=np.zeros((N,K));
 		for i in range(N):
@@ -97,6 +100,8 @@ for K in range(5,6):
 		type.append(temp);	
 	
 	#Matrix of different types of mutations
+	#put T which is originally in a matrix into a vector format
+	#thus, T*F gives the same results as the matrix format
 	T=np.zeros((N,4*Num_base-2));
 	for i in range(N):
 		temp=i;
@@ -112,6 +117,7 @@ for K in range(5,6):
 				temp/=4;
 	
 	#conv=np.dot(T,Feature)
+	#take one Newton step
 	T_inv=np.linalg.pinv(np.dot(np.transpose(T),T));
 	Multi_F=np.dot(T_inv,T.transpose());
 	Feature=np.dot(Multi_F,theta_array);
@@ -119,13 +125,15 @@ for K in range(5,6):
 	
 	
 	#Regularizer
+	#gradually increase Reg for good numeric property
 	for r in range(6):
 		
 		Reg=10**r-1;
 		
 		
 		
-		
+		#calculate the loss  on training data
+		# it is used to test convergence of the algorithm
 		LOSS=((Genome_BG[:,np.newaxis]*theta_array).sum(0)*P).sum()
 		for i in range(2):
 			temp=P[:,np.newaxis,np.newaxis,:]*theta_array[type[mid][i],np.newaxis,:]*Matrix[i,:,:]
@@ -136,13 +144,13 @@ for K in range(5,6):
 		
 		
 		
-		
+		#force it go into the while loop
 		old=LOSS+1;
 		new=LOSS;
 		
 		
 		
-		
+		#while the change of loss is sufficiently small, which means the adjacent two steps give quite similar results
 		while(abs(new-old)>1.0/(2*r+1)):
 			###
 			###
@@ -217,8 +225,10 @@ for K in range(5,6):
 					x_new_max[~b_array]=x_new[~b_array];
 				theta_array[:,i]=1.0/2*(x_new_max+x_new_min)
 			
+			#normalise the sum to 1
 			theta_array/=theta_array.sum(0);
 			
+			#update latent variable
 			for i in range(2):
 				Z[:,type[mid][i],:,:]=P[:,np.newaxis,np.newaxis,:]*theta_array[np.newaxis,type[mid][i],np.newaxis,:]*Matrix[np.newaxis,i,:,:];
 			
@@ -238,18 +248,29 @@ for K in range(5,6):
 			#Update feature
 			F_Gradient=np.ones((N,K))
 			alpha=1
+			#line search for Newton's method
+			#it is a heuristic method here
+			
+			#while the update is relatively small
 			while (((alpha*F_Gradient)**2)).sum()>0.01:
+				#calculate the gradient
 				F_Gradient=(theta_array-conv)*np.sign(conv)
 				F_Gradient=np.dot(Multi_F,F_Gradient)
 				conv_change=np.dot(T,F_Gradient);
+				#calculate the largest value that you can take while not change the sign of a particular T*F
 				temp=np.dot(T,Feature)/conv_change
 				
+				#the step size alpha is taken to be the largest value below 1 that you could take while "not change" (change it a little bit by setting alpha to be 0.01% larger than the ideal value)  the sign of any T*F
+
 				alpha=-np.max(temp[temp<0])
 				alpha=min(1,alpha*1.0001)
 				
+				#update F
 				Feature+=alpha*F_Gradient
 				conv=conv_update();	
 			
+
+			#calculate the new loss 
 			LOSS=((Genome_BG[:,np.newaxis]*theta_array).sum(0)*P).sum()
 			for i in range(2):
 				temp=P[:,np.newaxis,np.newaxis,:]*theta_array[type[mid][i],np.newaxis,:]*Matrix[i,:,:]
@@ -266,7 +287,8 @@ for K in range(5,6):
 		print r;
 		
 	
-	
+	#calculate the loss on test data
+	# It is used to choose K
 	TEST_LOSS=((test_BG[:,np.newaxis]*theta_array).sum(0)*P).sum()
 	for i in range(2):
 		temp=P[:,np.newaxis,np.newaxis,:]*theta_array[type[mid][i],np.newaxis,:]*Matrix[i,:,:]
@@ -276,6 +298,9 @@ for K in range(5,6):
 	training_error.append(LOSS);
 	test_error.append(TEST_LOSS);
 
+
+
+#store results
 np.savetxt("/data/ted/COAD/eso_relu_Feature_5.txt",Feature, fmt='%s',delimiter='\t')
 np.savetxt("/data/ted/COAD/eso_relu_Matrix_5.txt",Matrix, fmt='%s',delimiter='\t')
 np.savetxt("/data/ted/COAD/eso_relu_P_5.txt",P, fmt='%.18e',delimiter='\t')
